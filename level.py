@@ -39,10 +39,23 @@ class Level:
 		self.shop_active = False
 
 		# music
+		pygame.mixer.init()
+		
 		self.success = pygame.mixer.Sound('../audio/success.wav')
 		self.success.set_volume(0.3)
 		self.music = pygame.mixer.Sound('../audio/music.mp3')
 		self.music.play(loops = -1)
+
+		#weather music
+		self.rain_music = pygame.mixer.Sound('../audio/rain.mp3')
+		self.rain_music.set_volume(0.7)
+		self.rain_channel = pygame.mixer.Channel(1)
+
+		self.sun_music = pygame.mixer.Sound('../audio/day.mp3')
+		self.sun_music.set_volume(0.7)
+		self.sun_channel = pygame.mixer.Channel(2)
+
+		self.update_weather_music()
 
 	def setup(self):
 		tmx_data = load_pygame('../data/map.tmx')
@@ -116,6 +129,18 @@ class Level:
 
 		self.shop_active = not self.shop_active
 
+	def update_weather_music(self):
+		if self.raining:
+			if not self.rain_channel.get_busy():
+				self.rain_channel.play(self.rain_music,loops=-1)
+			if self.sun_channel.get_busy():
+				self.sun_channel.stop()
+		else:
+			if not self.sun_channel.get_busy():
+				self.sun_channel.play(self.sun_music,loops=-1)
+			if self.rain_channel.get_busy():
+				self.rain_channel.stop()
+
 	def reset(self):
 		# plants
 		self.soil_layer.update_plants()
@@ -135,6 +160,10 @@ class Level:
 
 		# sky
 		self.sky.start_color = [255,255,255]
+
+		#weather
+		self.update_weather_music()
+
 
 	def plant_collision(self):
 		if self.soil_layer.plant_sprites:
@@ -164,6 +193,9 @@ class Level:
 			self.rain.update()
 		self.sky.display(dt)
 
+		# music
+		self.update_weather_music()
+
 		# transition overlay
 		if self.player.sleep:
 			self.transition.play()
@@ -184,12 +216,3 @@ class CameraGroup(pygame.sprite.Group):
 					offset_rect = sprite.rect.copy()
 					offset_rect.center -= self.offset
 					self.display_surface.blit(sprite.image, offset_rect)
-
-					# # anaytics
-					# if sprite == player:
-					# 	pygame.draw.rect(self.display_surface,'red',offset_rect,5)
-					# 	hitbox_rect = player.hitbox.copy()
-					# 	hitbox_rect.center = offset_rect.center
-					# 	pygame.draw.rect(self.display_surface,'green',hitbox_rect,5)
-					# 	target_pos = offset_rect.center + PLAYER_TOOL_OFFSET[player.status.split('_')[0]]
-					# 	pygame.draw.circle(self.display_surface,'blue',target_pos,5)
